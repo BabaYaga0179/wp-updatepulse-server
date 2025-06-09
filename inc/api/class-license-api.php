@@ -22,18 +22,21 @@ class License_API {
 	 * Is doing API request
 	 *
 	 * @var boolean|null
+	 * @since 1.0.0
 	 */
 	protected static $doing_api_request = null;
 	/**
 	 * Instance
 	 *
 	 * @var License_API|null
+	 * @since 1.0.0
 	 */
 	protected static $instance;
 	/**
 	 * Config
 	 *
 	 * @var array|null
+	 * @since 1.0.0
 	 */
 	protected static $config;
 
@@ -41,34 +44,37 @@ class License_API {
 	 * License server
 	 *
 	 * @var License_Server
+	 * @since 1.0.0
 	 */
 	protected $license_server;
 	/**
 	 * HTTP response code
 	 *
 	 * @var int|null
+	 * @since 1.0.0
 	 */
 	protected $http_response_code = null;
 	/**
 	 * API key ID
 	 *
 	 * @var string|null
+	 * @since 1.0.0
 	 */
 	protected $api_key_id;
 	/**
 	 * API access
 	 *
 	 * @var array|null
+	 * @since 1.0.0
 	 */
 	protected $api_access;
 
 	/**
 	 * Constructor
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param boolean $init_hooks
 	 * @param boolean $local_request
+	 * @since 1.0.0
 	 */
 	public function __construct( $init_hooks = false, $local_request = true ) {
 
@@ -107,10 +113,9 @@ class License_API {
 	/**
 	 * Browse licenses
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param string $query
 	 * @return object Result of the browse operation
+	 * @since 1.0.0
 	 */
 	public function browse( $query ) {
 		$payload = json_decode( wp_unslash( $query ), true );
@@ -203,10 +208,9 @@ class License_API {
 	/**
 	 * Read license
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $license_data
 	 * @return object Result of the read operation
+	 * @since 1.0.0
 	 */
 	public function read( $license_data ) {
 		$result = wp_cache_get(
@@ -255,10 +259,9 @@ class License_API {
 	/**
 	 * Edit license
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $license_data
 	 * @return object Result of the edit operation
+	 * @since 1.0.0
 	 */
 	public function edit( $license_data ) {
 
@@ -321,10 +324,9 @@ class License_API {
 	/**
 	 * Add license
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $license_data
 	 * @return object Result of the add operation
+	 * @since 1.0.0
 	 */
 	public function add( $license_data ) {
 
@@ -367,10 +369,9 @@ class License_API {
 	/**
 	 * Delete license
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $license_data
 	 * @return object Result of the delete operation
+	 * @since 1.0.0
 	 */
 	public function delete( $license_data ) {
 		$result = $this->license_server->delete_license( $license_data );
@@ -404,12 +405,17 @@ class License_API {
 	/**
 	 * Check license
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $license_data
 	 * @return object Result of the check operation
+	 * @since 1.0.0
 	 */
 	public function check( $license_data ) {
+		/**
+		 * Filter the license data payload before checking a license.
+		 *
+		 * @param array $license_data The license data payload.
+		 * @since 1.0.0
+		 */
 		$license_data = apply_filters( 'upserv_check_license_dirty_payload', $license_data );
 		$license      = $this->license_server->read_license( $license_data );
 		$raw_result   = array();
@@ -423,8 +429,21 @@ class License_API {
 			$result     = null;
 		}
 
+		/**
+		 * Filter the result of the license check operation.
+		 *
+		 * @param object|null $license      The license object or null if not found.
+		 * @param array       $license_data The license data payload.
+		 * @since 1.0.0
+		 */
 		$result = apply_filters( 'upserv_check_license_result', $license, $license_data );
 
+		/**
+		 * Fired after checking a license.
+		 *
+		 * @param mixed $raw_result The raw result of the license check.
+		 * @since 1.0.0
+		 */
 		do_action( 'upserv_did_check_license', $raw_result );
 
 		if ( ! is_object( $result ) ) {
@@ -437,12 +456,17 @@ class License_API {
 	/**
 	 * Activate license
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $license_data
 	 * @return object Result of the activate operation
+	 * @since 1.0.0
 	 */
 	public function activate( $license_data ) {
+		/**
+		 * Filter the license data payload before activating a license.
+		 *
+		 * @param array $license_data The license data payload.
+		 * @since 1.0.0
+		 */
 		$license_data = apply_filters( 'upserv_activate_license_dirty_payload', $license_data );
 
 		$this->normalize_allowed_domains( $license_data );
@@ -451,6 +475,12 @@ class License_API {
 		$license      = $this->license_server->read_license( $license_data );
 		$domain       = $this->extract_domain_from_license_data( $license_data );
 
+		/**
+		 * Fired before activating a license.
+		 *
+		 * @param object $license The license object.
+		 * @since 1.0.0
+		 */
 		do_action( 'upserv_pre_activate_license', $license );
 
 		if ( $this->is_valid_license_for_state_transition( $license, $request_slug, $domain ) ) {
@@ -461,8 +491,24 @@ class License_API {
 
 		$raw_result = isset( $result['raw_result'] ) ? $result['raw_result'] : $result;
 		$result     = isset( $result['result'] ) ? $result['result'] : $result;
-		$result     = apply_filters( 'upserv_activate_license_result', $result, $license_data, $license );
 
+		/**
+		 * Filter the result of the license activation operation.
+		 *
+		 * @param object     $result       The result of the license activation.
+		 * @param array      $license_data The license data payload.
+		 * @param object     $license      The license object.
+		 * @since 1.0.0
+		 */
+		$result = apply_filters( 'upserv_activate_license_result', $result, $license_data, $license );
+
+		/**
+		 * Fired after activating a license.
+		 *
+		 * @param mixed $raw_result   The raw result of the license activation.
+		 * @param array $license_data The license data payload.
+		 * @since 1.0.0
+		 */
 		do_action( 'upserv_did_activate_license', $raw_result, $license_data );
 
 		return (object) $result;
@@ -471,12 +517,17 @@ class License_API {
 	/**
 	 * Deactivate license
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $license_data
 	 * @return object Result of the deactivate operation
+	 * @since 1.0.0
 	 */
 	public function deactivate( $license_data ) {
+		/**
+		 * Filter the license data payload before deactivating a license.
+		 *
+		 * @param array $license_data The license data payload.
+		 * @since 1.0.0
+		 */
 		$license_data = apply_filters( 'upserv_deactivate_license_dirty_payload', $license_data );
 
 		$this->normalize_allowed_domains( $license_data );
@@ -485,6 +536,12 @@ class License_API {
 		$license      = $this->license_server->read_license( $license_data );
 		$domain       = $this->extract_domain_from_license_data( $license_data );
 
+		/**
+		 * Fired before deactivating a license.
+		 *
+		 * @param object $license The license object.
+		 * @since 1.0.0
+		 */
 		do_action( 'upserv_pre_deactivate_license', $license );
 
 		if ( $this->is_valid_license_for_state_transition( $license, $request_slug, $domain ) ) {
@@ -495,8 +552,24 @@ class License_API {
 
 		$raw_result = isset( $result['raw_result'] ) ? $result['raw_result'] : $result;
 		$result     = isset( $result['result'] ) ? $result['result'] : $result;
-		$result     = apply_filters( 'upserv_deactivate_license_result', $result, $license_data, $license );
 
+		/**
+		 * Filter the result of the license deactivation operation.
+		 *
+		 * @param object     $result       The result of the license deactivation.
+		 * @param array      $license_data The license data payload.
+		 * @param object     $license      The license object.
+		 * @since 1.0.0
+		 */
+		$result = apply_filters( 'upserv_deactivate_license_result', $result, $license_data, $license );
+
+		/**
+		 * Fired after deactivating a license.
+		 *
+		 * @param mixed $raw_result   The raw result of the license deactivation.
+		 * @param array $license_data The license data payload.
+		 * @since 1.0.0
+		 */
 		do_action( 'upserv_did_deactivate_license', $raw_result, $license_data );
 
 		return (object) $result;
@@ -540,10 +613,9 @@ class License_API {
 	/**
 	 * Query vars filter
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $query_vars
 	 * @return array The filtered query vars
+	 * @since 1.0.0
 	 */
 	public function query_vars( $query_vars ) {
 		$query_vars = array_merge(
@@ -567,10 +639,9 @@ class License_API {
 	/**
 	 * Filter update request params
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $params
 	 * @return array The filtered params
+	 * @since 1.0.0
 	 */
 	public function upserv_handle_update_request_params( $params ) {
 		global $wp;
@@ -589,10 +660,9 @@ class License_API {
 	/**
 	 * Filter license actions
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $actions
 	 * @return array The filtered actions
+	 * @since 1.0.0
 	 */
 	public function upserv_api_license_actions( $actions ) {
 		$actions['browse'] = __( 'Browse multiple license records', 'updatepulse-server' );
@@ -607,10 +677,9 @@ class License_API {
 	/**
 	 * Filter webhook events
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $webhook_events
 	 * @return array The filtered webhook events
+	 * @since 1.0.0
 	 */
 	public function upserv_api_webhook_events( $webhook_events ) {
 
@@ -637,11 +706,10 @@ class License_API {
 	/**
 	 * License action
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param object $result
 	 * @param array  $payload
 	 * @param object $original
+	 * @since 1.0.0
 	 */
 	public function upserv_did_license_action( $result, $payload, $original = null ) {
 		$format = '';
@@ -717,13 +785,12 @@ class License_API {
 	/**
 	 * Webhook fire filter
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param boolean $fire
 	 * @param array   $payload
 	 * @param string  $url
 	 * @param array   $info
 	 * @return boolean The filtered fire value
+	 * @since 1.0.0
 	 */
 	public function upserv_webhook_fire( $fire, $payload, $url, $info ) {
 
@@ -790,13 +857,12 @@ class License_API {
 	/**
 	 * Fetch nonce filter
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param string $nonce
 	 * @param string $true_nonce
 	 * @param int    $expiry
 	 * @param array  $data
 	 * @return string|null The filterd nonce or null if invalid
+	 * @since 1.0.0
 	 */
 	public function upserv_fetch_nonce_private( $nonce, $true_nonce, $expiry, $data ) {
 		$config = self::get_config();
@@ -840,10 +906,9 @@ class License_API {
 	/**
 	 * Nonce API payload filter
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param array $payload
 	 * @return array The filtered payload
+	 * @since 1.0.0
 	 */
 	public function upserv_nonce_api_payload( $payload ) {
 		global $wp;
@@ -893,9 +958,8 @@ class License_API {
 	/**
 	 * Is doing API request
 	 *
-	 * @since 1.0.0
-	 *
 	 * @return boolean True if doing API request, false otherwise
+	 * @since 1.0.0
 	 */
 	public static function is_doing_api_request() {
 
@@ -909,9 +973,8 @@ class License_API {
 	/**
 	 * Get config
 	 *
-	 * @since 1.0.0
-	 *
 	 * @return array The config
+	 * @since 1.0.0
 	 */
 	public static function get_config() {
 
@@ -924,15 +987,20 @@ class License_API {
 			self::$config = $config;
 		}
 
+		/**
+		 * Filter the License API configuration.
+		 *
+		 * @param array $config The License API configuration.
+		 * @since 1.0.0
+		 */
 		return apply_filters( 'upserv_license_api_config', self::$config );
 	}
 
 	/**
 	 * Get instance
 	 *
-	 * @since 1.0.0
-	 *
 	 * @return License_API The instance
+	 * @since 1.0.0
 	 */
 	public static function get_instance() {
 
@@ -946,10 +1014,9 @@ class License_API {
 	/**
 	 * Is package require license
 	 *
-	 * @since 1.0.0
-	 *
 	 * @param int $package_id
 	 * @return boolean True if package requires license, false otherwise
+	 * @since 1.0.0
 	 */
 	public static function is_package_require_license( $package_id ) {
 		$require_license = wp_cache_get( 'upserv_package_require_license_' . $package_id, 'updatepulse-server', false, $found );
@@ -975,9 +1042,9 @@ class License_API {
 	/**
 	 * Sanitize license result
 	 *
-	 * @since 1.0.0
 	 * @param object $result - by reference
 	 * @return void
+	 * @since 1.0.0
 	 */
 	protected function sanitize_license_result( &$result ) {
 		$num_allowed_domains         = (
@@ -1008,6 +1075,7 @@ class License_API {
 	 * @param string $message
 	 * @param array $data
 	 * @return array The response
+	 * @since 1.0.0
 	 */
 	protected function prepare_error_response( $code, $message, $data = array() ) {
 		return array(
@@ -1022,6 +1090,7 @@ class License_API {
 	 *
 	 * @param array $license_data - by reference
 	 * @return void
+	 * @since 1.0.0
 	 */
 	protected function normalize_allowed_domains( &$license_data ) {
 
@@ -1035,6 +1104,7 @@ class License_API {
 	 *
 	 * @param array $license_data
 	 * @return string|false The first domain found or false if not found
+	 * @since 1.0.0
 	 */
 	protected function extract_domain_from_license_data( $license_data ) {
 
@@ -1056,6 +1126,7 @@ class License_API {
 	 * @param string $request_slug
 	 * @param string $domain
 	 * @return boolean True if valid, false otherwise
+	 * @since 1.0.0
 	 */
 	protected function is_valid_license_for_state_transition( $license, $request_slug, $domain ) {
 		return (
@@ -1072,6 +1143,7 @@ class License_API {
 	 * @param object $license
 	 * @param string $domain
 	 * @return array|null The result or null if not found
+	 * @since 1.0.0
 	 */
 	protected function handle_license_activation( $license, $domain ) {
 		$domain_count = count( $license->allowed_domains ) + 1;
@@ -1098,6 +1170,7 @@ class License_API {
 	 *
 	 * @param object $license
 	 * @return array The response
+	 * @since 1.0.0
 	 */
 	protected function prepare_illegal_status_response( $license ) {
 		$response = array(
@@ -1120,6 +1193,7 @@ class License_API {
 	 *
 	 * @param object $license
 	 * @return array The response
+	 * @since 1.0.0
 	 */
 	protected function prepare_max_domains_response( $license ) {
 		return array(
@@ -1136,6 +1210,7 @@ class License_API {
 	 *
 	 * @param string $domain
 	 * @return array The response
+	 * @since 1.0.0
 	 */
 	protected function prepare_already_activated_response( $domain ) {
 		return array(
@@ -1153,11 +1228,19 @@ class License_API {
 	 * @param object $license
 	 * @param string $domain
 	 * @return array|null The result or null if not found
+	 * @since 1.0.0
 	 */
 	protected function process_license_activation( $license, $domain ) {
 		$data = isset( $license->data ) ? $license->data : array();
 
 		if ( ! isset( $data['next_deactivate'] ) || time() > $data['next_deactivate'] ) {
+			/**
+			 * Filter the timestamp for the next allowed deactivation after activation.
+			 *
+			 * @param int    $timestamp The timestamp for the next allowed deactivation.
+			 * @param object $license   The license object.
+			 * @since 1.0.0
+			 */
 			$data['next_deactivate'] = apply_filters( 'upserv_activate_license_next_deactivate', time(), $license );
 		}
 
@@ -1170,6 +1253,12 @@ class License_API {
 
 		try {
 			$result = $this->license_server->edit_license(
+				/**
+				 * Filter the payload for license activation.
+				 *
+				 * @param array $payload The license activation payload.
+				 * @since 1.0.0
+				 */
 				apply_filters( 'upserv_activate_license_payload', $payload )
 			);
 		} catch ( Exception $e ) {
@@ -1198,6 +1287,7 @@ class License_API {
 	 * @param object $license
 	 * @param string $domain
 	 * @return array|null The result or null if not found
+	 * @since 1.0.0
 	 */
 	protected function handle_license_deactivation( $license, $domain ) {
 
@@ -1226,6 +1316,7 @@ class License_API {
 	 *
 	 * @param string $domain
 	 * @return array The response
+	 * @since 1.0.0
 	 */
 	protected function prepare_already_deactivated_response( $domain ) {
 		return array(
@@ -1242,6 +1333,7 @@ class License_API {
 	 *
 	 * @param object $license
 	 * @return array The response
+	 * @since 1.0.0
 	 */
 	protected function prepare_too_early_deactivation_response( $license ) {
 		return array(
@@ -1259,9 +1351,17 @@ class License_API {
 	 * @param object $license
 	 * @param string $domain
 	 * @return array|null The result or null if not found
+	 * @since 1.0.0
 	 */
 	protected function process_license_deactivation( $license, $domain ) {
-		$data                    = isset( $license->data ) ? $license->data : array();
+		$data = isset( $license->data ) ? $license->data : array();
+		/**
+		 * Filter the timestamp for the next allowed deactivation.
+		 *
+		 * @param int    $timestamp The timestamp for the next allowed deactivation.
+		 * @param object $license   The license object.
+		 * @since 1.0.0
+		 */
 		$data['next_deactivate'] = apply_filters(
 			'upserv_deactivate_license_next_deactivate',
 			(bool) ( constant( 'WP_DEBUG' ) ) ? time() + ( MINUTE_IN_SECONDS / 4 ) : time() + MONTH_IN_SECONDS,
@@ -1278,6 +1378,12 @@ class License_API {
 
 		try {
 			$result = $this->license_server->edit_license(
+				/**
+				 * Filter the payload for license deactivation.
+				 *
+				 * @param array $payload The license deactivation payload.
+				 * @since 1.0.0
+				 */
 				apply_filters( 'upserv_activate_license_payload', $payload )
 			);
 		} catch ( Exception $e ) {
@@ -1306,6 +1412,7 @@ class License_API {
 	 * @param array $license
 	 * @param array $license_data
 	 * @return array The response
+	 * @since 1.0.0
 	 */
 	protected function handle_invalid_license( $license, $license_data ) {
 
@@ -1340,6 +1447,7 @@ class License_API {
 	 * @param string $action
 	 * @param array  $payload
 	 * @return boolean True if authorized, false otherwise
+	 * @since 1.0.0
 	 */
 	protected function authorize_private( $action, $payload ) {
 		$token   = false;
@@ -1406,8 +1514,15 @@ class License_API {
 	 *
 	 * @param string $method
 	 * @return boolean True if public, false otherwise
+	 * @since 1.0.0
 	 */
 	protected function is_api_public( $method ) {
+		/**
+		 * Filter the list of public License API actions.
+		 *
+		 * @param array $public_api_actions List of public License API actions.
+		 * @since 1.0.0
+		 */
 		$public_api    = apply_filters(
 			'upserv_license_public_api_actions',
 			array(
@@ -1461,6 +1576,14 @@ class License_API {
 			if ( ! $malformed_request ) {
 				$this->init_server();
 
+				/**
+				 * Filter whether the License API request is authorized.
+				 *
+				 * @param bool   $authorized Whether the License API request is authorized.
+				 * @param string $method     The method of the request.
+				 * @param array  $payload    The payload of the request.
+				 * @since 1.0.0
+				 */
 				$authorized = apply_filters(
 					'upserv_license_api_request_authorized',
 					(
@@ -1475,6 +1598,13 @@ class License_API {
 				);
 
 				if ( $authorized ) {
+					/**
+					 * Fired before the License API request is processed.
+					 *
+					 * @param string $method  The License API action.
+					 * @param array  $payload The payload of the request.
+					 * @since 1.0.0
+					 */
 					do_action( 'upserv_license_api_request', $method, $payload );
 
 					if ( method_exists( $this, $method ) ) {
@@ -1512,9 +1642,8 @@ class License_API {
 	/**
 	 * Authorize IP
 	 *
-	 * @since 1.0.0
-	 *
 	 * @return boolean True if authorized, false otherwise
+	 * @since 1.0.0
 	 */
 	protected function authorize_ip() {
 		$result = false;
@@ -1540,8 +1669,15 @@ class License_API {
 	/**
 	 * Init server
 	 *
+	 * @since 1.0.0
 	 */
 	protected function init_server() {
+		/**
+		 * Filter the License Server instance.
+		 *
+		 * @param License_Server $license_server The license server instance.
+		 * @since 1.0.0
+		 */
 		$this->license_server = apply_filters( 'upserv_license_server', new License_Server() );
 	}
 }
